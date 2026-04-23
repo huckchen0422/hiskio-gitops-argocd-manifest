@@ -11,5 +11,7 @@ data:
   statusbadge.enabled: "true"
 
   repositories: |
-    - url: https://github.com/hwchiu/hiskio-gitops-argocd-manifest.git
-    - url: https://github.com/hwchiu/hiskio-gitops-demo-manifest.git
+  #  - url: https://github.com/hwchiu/hiskio-gitops-argocd-manifest.git
+  #  - url: https://github.com/hwchiu/hiskio-gitops-demo-manifest.git
+    - url: https://github.com/huckchen0422/hiskio-gitops-argocd-manifest.git
+    - url: https://github.com/huckchen0422/hiskio-gitops-demo-manifest.git
