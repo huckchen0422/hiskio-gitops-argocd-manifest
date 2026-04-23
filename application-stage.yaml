@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/hwchiu/hiskio-gitops-demo-manifest
+    repoURL: https://github.com/huckchen0422/hiskio-gitops-demo-manifest
     targetRevision: HEAD
     path: .
 
@@ -18,7 +18,7 @@ spec:
       version: v3
 
   destination:
-    server: https://172.18.0.6:6443
+    server: https://172.18.0.4:6443
     namespace: default
 
   # Sync policy

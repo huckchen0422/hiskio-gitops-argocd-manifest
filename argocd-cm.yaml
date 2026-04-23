@@ -10,8 +10,7 @@ data:
   # Enables application status badge feature
   statusbadge.enabled: "true"
 
+  # 注意：這裡的 repositories 內容必須縮進
   repositories: |
-  #  - url: https://github.com/hwchiu/hiskio-gitops-argocd-manifest.git
-  #  - url: https://github.com/hwchiu/hiskio-gitops-demo-manifest.git
     - url: https://github.com/huckchen0422/hiskio-gitops-argocd-manifest.git
     - url: https://github.com/huckchen0422/hiskio-gitops-demo-manifest.git
