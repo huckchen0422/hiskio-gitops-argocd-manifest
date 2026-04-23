@@ -8,8 +8,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/hwchiu/hiskio-gitops-demo-manifest
-    targetRevision: ch3
+    repoURL: https://github.com/huckchen0422/hiskio-gitops-demo-manifest
+    targetRevision: ch4
     path: .
     helm:
       valueFiles:

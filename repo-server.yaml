@@ -6,7 +6,9 @@ metadata:
     app.kubernetes.io/part-of: argocd
     app.kubernetes.io/component: repo-server
   name: argocd-repo-server
+  namespace: argocd
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: argocd-repo-server
@@ -16,17 +18,54 @@ spec:
         app.kubernetes.io/name: argocd-repo-server
     spec:
       automountServiceAccountToken: false
+      serviceAccountName: argocd-repo-server
+      # 安全性設定：限制容器權限
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: copyutil
+        image: quay.io/argoproj/argocd:v3.0.0
+        command: ["/bin/cp", "-n", "/usr/local/bin/argocd", "/var/run/argocd/argocd-cmp-server"]
+        volumeMounts:
+        - mountPath: /var/run/argocd
+          name: var-files
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
       containers:
       - name: argocd-repo-server
-        image: quay.io/argoproj/argocd:v1.8.4
+        image: quay.io/argoproj/argocd:v3.0.0
         imagePullPolicy: Always
-        command:
-        - uid_entrypoint.sh
-        - argocd-repo-server
-        - --parallelismlimit
-        - '1'
-        - --redis
-        - $(ARGOCD_REDIS_SERVICE):6379
+        # v3.x 啟動指令通常直接執行二進位檔
+        args:
+        - /usr/local/bin/argocd-repo-server
+        # v3.x 推薦使用環境變數讀取配置，而不是在 command 寫死
+        env:
+        - name: ARGOCD_REPO_SERVER_PARALLELISM_LIMIT
+          value: "1"  # 這裡保留你原本教學中設定的 1
+        - name: REDIS_SERVER
+          valueFrom:
+            configMapKeyRef:
+              name: argocd-cmd-params-cm
+              key: redis.server
+              optional: true
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: argocd-redis
+              key: auth
+              optional: true
+        # 繼承 Helm 相關工作目錄設定
+        - name: HELM_CACHE_HOME
+          value: /helm-working-dir
+        - name: HELM_CONFIG_HOME
+          value: /helm-working-dir
+        - name: HELM_DATA_HOME
+          value: /helm-working-dir
         ports:
         - containerPort: 8081
         - containerPort: 8084
@@ -35,35 +74,53 @@ spec:
             path: /healthz?full=true
             port: 8084
           initialDelaySeconds: 30
-          periodSeconds: 5
-          failureThreshold: 3
+          periodSeconds: 30
         readinessProbe:
           httpGet:
             path: /healthz
             port: 8084
           initialDelaySeconds: 5
           periodSeconds: 10
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
         volumeMounts:
-        - name: ssh-known-hosts
-          mountPath: /app/config/ssh
-        - name: tls-certs
-          mountPath: /app/config/tls
-        - name: gpg-keys
-          mountPath: /app/config/gpg/source
-        - name: gpg-keyring
-          mountPath: /app/config/gpg/keys
+        - mountPath: /app/config/ssh
+          name: ssh-known-hosts
+        - mountPath: /app/config/tls
+          name: tls-certs
+        - mountPath: /app/config/gpg/source
+          name: gpg-keys
+        - mountPath: /app/config/gpg/keys
+          name: gpg-keyring
+        - mountPath: /tmp
+          name: tmp
+        - mountPath: /helm-working-dir
+          name: helm-working-dir
+        - mountPath: /home/argocd/cmp-server/plugins
+          name: plugins
       volumes:
-        - name: ssh-known-hosts
-          configMap:
-            name: argocd-ssh-known-hosts-cm
-        - name: tls-certs
-          configMap:
-            name: argocd-tls-certs-cm
-        - name: gpg-keys
-          configMap:
-            name: argocd-gpg-keys-cm
-        - name: gpg-keyring
-          emptyDir: {}
+      - name: ssh-known-hosts
+        configMap:
+          name: argocd-ssh-known-hosts-cm
+      - name: tls-certs
+        configMap:
+          name: argocd-tls-certs-cm
+      - name: gpg-keys
+        configMap:
+          name: argocd-gpg-keys-cm
+      - name: gpg-keyring
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: helm-working-dir
+        emptyDir: {}
+      - name: var-files
+        emptyDir: {}
+      - name: plugins
+        emptyDir: {}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -72,10 +129,4 @@ spec:
               labelSelector:
                 matchLabels:
                   app.kubernetes.io/name: argocd-repo-server
-              topologyKey: kubernetes.io/hostname
-          - weight: 5
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/part-of: argocd
               topologyKey: kubernetes.io/hostname
