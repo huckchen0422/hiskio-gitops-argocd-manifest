@@ -33,8 +33,8 @@ data:
             baseDN: ou=groups,dc=hwchiu,dc=com
             filter: "(objectClass=posixGroup)"
             userMatchers:
-            - userAttr: uid
-              groupAttr: memberUid
+              - userAttr: uid
+                groupAttr: memberUid
             nameAttr: cn
   # Add repo for testing -> https://github.com/huckchen0422/hiskio-gitops-demo
   repositories: |
