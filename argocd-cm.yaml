@@ -7,10 +7,37 @@ metadata:
     app.kubernetes.io/name: argocd-cm
     app.kubernetes.io/part-of: argocd
 data:
+  # Copy from branch: ch4
   # Enables application status badge feature
   statusbadge.enabled: "true"
-
-  # 注意：這裡的 repositories 內容必須縮進
+  url: https://192.168.1.204:8888
+  dex.config: |
+    connectors:
+      - type: ldap
+        id: ldap
+        name: LDAP
+        config:
+          host: 192.168.1.204:389
+          insecureNoSSL: true
+          bindDN: cn=admin,dc=hwchiu,dc=com
+          bindPW: password
+          startTLS: false
+          userSearch:
+            baseDN: dc=hwchiu,dc=com
+            filter: "(objectClass=posixAccount)"
+            username: uid
+            idAttr: uid
+            emailAttr: mail
+            nameAttr: uid
+          groupSearch:
+            baseDN: ou=groups,dc=hwchiu,dc=com
+            filter: "(objectClass=posixGroup)"
+            userMatchers:
+            - userAttr: uid
+              groupAttr: memberUid
+            nameAttr: cn
+  # Add repo for testing -> https://github.com/huckchen0422/hiskio-gitops-demo
   repositories: |
     - url: https://github.com/huckchen0422/hiskio-gitops-argocd-manifest.git
     - url: https://github.com/huckchen0422/hiskio-gitops-demo-manifest.git
+    - url: https://github.com/huckchen0422/hiskio-gitops-demo
